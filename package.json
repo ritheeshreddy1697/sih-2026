@@ -1,0 +1,25 @@
+{
+  "name": "ncct-training-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NCCT cooperative training platform monorepo.",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm --workspace frontend run dev",
+    "build": "npm --workspace frontend run build",
+    "lint": "npm --workspace frontend run lint",
+    "typecheck": "npm --workspace frontend run typecheck",
+    "test": "npm --workspace frontend run test",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

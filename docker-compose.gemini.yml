@@ -1,0 +1,10 @@
+services:
+  backend:
+    environment:
+      GEMINI_API_KEY_FILE: /run/secrets/gemini_api_key
+    secrets:
+      - gemini_api_key
+
+secrets:
+  gemini_api_key:
+    file: ${GEMINI_API_KEY_FILE:?Set GEMINI_API_KEY_FILE}
