@@ -48,6 +48,17 @@ from app.services.career_ai import (
 )
 
 INTENT_TERMS = {
+    "greeting": {
+        "hi",
+        "hello",
+        "hey",
+        "greetings",
+        "namaste",
+        "नमस्ते",
+        "नमस्कार",
+        "నమస్తే",
+        "నమస్కారం",
+    },
     "programme": {
         "programme",
         "program",
@@ -421,6 +432,8 @@ def retrieve_sources(
     message: str,
     intent: str,
 ) -> list[CareerSourcePublic]:
+    if intent == "greeting":
+        return []
     if intent == "programme":
         return _programme_sources(db, user, message)
     if intent == "job":
@@ -550,6 +563,15 @@ def send_message(
         answer = _record_answer(conversation.language, intent, sources)
         provider_name = "platform-retrieval"
         used_fallback = False
+    elif intent == "greeting":
+        answer, provider_name, used_fallback = _provider_answer(
+            provider,
+            conversation.language,
+            intent,
+            content,
+            history,
+            sources,
+        )
     elif not sources:
         answer = UNAVAILABLE[conversation.language]
         provider_name = "local-faq"

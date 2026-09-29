@@ -130,6 +130,9 @@ Career counselling:
   `GEMINI_BASE_URL` in `backend/.env` (or the root `.env` for Docker Compose), then restart the
   backend.
 - Provider keys are backend-only. Do not add them to `frontend/.env` or any `VITE_*` variable.
+- Every authenticated workspace page also includes a compact assistant. It sends the current route,
+  selected language and recent conversation turns to the same backend-only Gemini configuration,
+  while keeping the richer sourced career workflow available to trainees on the dedicated page.
 
 Analytics:
 

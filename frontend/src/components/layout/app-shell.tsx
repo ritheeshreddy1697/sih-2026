@@ -28,6 +28,7 @@ import {
 import { navigationItems } from "../../lib/navigation";
 import { cn } from "../../lib/utils";
 import { usePwa } from "../../pwa/pwa-provider";
+import { GlobalAssistant } from "../assistant/global-assistant";
 import { LanguageSelect } from "../pwa/language-select";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -374,6 +375,7 @@ export function AppShell({ children, user, onLogout, notifications = [] }: AppSh
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
+      <GlobalAssistant user={user} />
     </div>
   );
 }

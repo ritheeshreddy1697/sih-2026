@@ -486,6 +486,11 @@ export function CareerCounsellorPage() {
                               ))}
                             </div>
                           ) : null}
+                          {item.role === "assistant" && item.provider ? (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {item.provider === "gemini" ? "Gemini" : "NCCT local guide"}
+                            </p>
+                          ) : null}
                           {item.role === "assistant" ? (
                             <div className="mt-2 flex gap-1">
                               <Button

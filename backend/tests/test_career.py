@@ -34,6 +34,8 @@ class MockCareerProvider:
 
     def generate(self, request: CareerAIRequest) -> str:
         self.requests.append(request)
+        if request.intent == "greeting":
+            return "Hello! I can help with your training and career questions."
         return "Use verified achievements and keep the resume concise. [F1]"
 
 
@@ -155,6 +157,17 @@ def test_grounded_counselling_history_feedback_and_support(
     assert created.status_code == 201
     conversation_id = created.json()["id"]
 
+    greeting = client.post(
+        f"/api/v1/career/conversations/{conversation_id}/messages",
+        headers=headers,
+        json={"content": "Hi"},
+    )
+    assert greeting.status_code == 201, greeting.text
+    assert greeting.json()["assistant_message"]["provider"] == "mock-provider"
+    assert greeting.json()["assistant_message"]["sources"] == []
+    assert "training and career questions" in greeting.json()["assistant_message"]["content"]
+    assert provider.requests[-1].intent == "greeting"
+
     resume = client.post(
         f"/api/v1/career/conversations/{conversation_id}/messages",
         headers=headers,
@@ -163,7 +176,7 @@ def test_grounded_counselling_history_feedback_and_support(
     assert resume.status_code == 201, resume.text
     assert resume.json()["assistant_message"]["provider"] == "mock-provider"
     assert resume.json()["assistant_message"]["sources"][0]["source_type"] == "faq"
-    assert len(provider.requests) == 1
+    assert len(provider.requests) == 2
 
     programmes = client.post(
         f"/api/v1/career/conversations/{conversation_id}/messages",
@@ -175,7 +188,7 @@ def test_grounded_counselling_history_feedback_and_support(
     assert programme.title in programme_answer["content"]
     assert programme.eligibility_criteria in programme_answer["content"]
     assert programme_answer["sources"][0]["url"] == f"/programmes/{programme.id}"
-    assert len(provider.requests) == 1
+    assert len(provider.requests) == 2
 
     jobs = client.post(
         f"/api/v1/career/conversations/{conversation_id}/messages",
@@ -187,7 +200,7 @@ def test_grounded_counselling_history_feedback_and_support(
     assert job["title"] in job_answer["content"]
     assert "Invented vacancy" not in job_answer["content"]
     assert job_answer["sources"][0]["url"] == f"/employment?job={job['id']}"
-    assert len(provider.requests) == 1
+    assert len(provider.requests) == 2
 
     entrepreneurship = client.post(
         f"/api/v1/career/conversations/{conversation_id}/messages",
@@ -198,7 +211,7 @@ def test_grounded_counselling_history_feedback_and_support(
     entrepreneurship_answer = entrepreneurship.json()["assistant_message"]
     assert "does not claim eligibility for government schemes" in entrepreneurship_answer["content"]
     assert entrepreneurship_answer["provider"] == "local-faq"
-    assert len(provider.requests) == 1
+    assert len(provider.requests) == 2
 
     assistant_message_id = resume.json()["assistant_message"]["id"]
     feedback = client.put(
@@ -219,7 +232,7 @@ def test_grounded_counselling_history_feedback_and_support(
 
     history = client.get(f"/api/v1/career/conversations/{conversation_id}", headers=headers)
     assert history.status_code == 200
-    assert len(history.json()["messages"]) == 8
+    assert len(history.json()["messages"]) == 10
     assert history.json()["escalation"]["status"] == "open"
 
     admin_support = client.get("/api/v1/career/support", headers=login(client, admin))

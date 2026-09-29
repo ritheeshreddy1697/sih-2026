@@ -1483,6 +1483,17 @@ export type CareerMessageExchange = {
   used_local_fallback: boolean;
 };
 
+export type AssistantChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AssistantChatResponse = {
+  answer: string;
+  provider: string;
+  used_local_fallback: boolean;
+};
+
 const defaultBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
@@ -2987,6 +2998,19 @@ export class ApiClient {
     return this.request<InstitutionRecord>(
       `/api/v1/profiles/institutions/${id}`,
       { method: "PATCH", body: JSON.stringify(payload) },
+      true,
+    );
+  }
+
+  platformAssistant(payload: {
+    message: string;
+    history: AssistantChatTurn[];
+    page_path: string;
+    language: CareerLanguage;
+  }): Promise<AssistantChatResponse> {
+    return this.request(
+      "/api/v1/assistant/chat",
+      { method: "POST", body: JSON.stringify(payload) },
       true,
     );
   }

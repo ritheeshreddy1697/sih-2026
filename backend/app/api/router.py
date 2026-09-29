@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes.analytics import router as analytics_router
+from app.api.routes.assistant import router as assistant_router
 from app.api.routes.attendance import router as attendance_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.career import router as career_router
@@ -17,6 +18,7 @@ from app.api.routes.programmes import router as programmes_router
 api_router = APIRouter()
 api_router.include_router(health_router, prefix="/health", tags=["health"])
 api_router.include_router(auth_router, prefix="/auth", tags=["authentication"])
+api_router.include_router(assistant_router, prefix="/assistant", tags=["platform assistant"])
 api_router.include_router(attendance_router, prefix="/attendance", tags=["attendance"])
 api_router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(certificates_router, prefix="/certificates", tags=["certificates"])

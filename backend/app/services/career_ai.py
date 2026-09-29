@@ -55,6 +55,23 @@ class LocalFaqProvider:
     name = "local-faq"
 
     def generate(self, request: CareerAIRequest) -> str:
+        if request.intent == "greeting":
+            return {
+                CareerLanguage.ENGLISH: (
+                    "Hello! I can help with training programmes, jobs, resumes, interviews, "
+                    "learning, certificates, and employment. What would you like help with?"
+                ),
+                CareerLanguage.HINDI: (
+                    "नमस्ते! मैं प्रशिक्षण कार्यक्रमों, नौकरियों, रिज़्यूमे, साक्षात्कार, "
+                    "सीखने, प्रमाणपत्रों और रोज़गार में आपकी मदद कर सकता हूँ। आप किस बारे "
+                    "में सहायता चाहते हैं?"
+                ),
+                CareerLanguage.TELUGU: (
+                    "నమస్తే! శిక్షణ కార్యక్రమాలు, ఉద్యోగాలు, రెజ్యూమేలు, ఇంటర్వ్యూలు, "
+                    "అభ్యాసం, సర్టిఫికెట్లు మరియు ఉపాధి గురించి నేను సహాయం చేయగలను. "
+                    "మీకు ఏ విషయంలో సహాయం కావాలి?"
+                ),
+            }[request.language]
         if request.sources:
             return request.sources[0].content
         return {
@@ -76,7 +93,7 @@ class LocalFaqProvider:
 
 
 class GeminiCompatibleProvider:
-    name = "gemini-compatible"
+    name = "gemini"
 
     def __init__(
         self,
@@ -96,15 +113,25 @@ class GeminiCompatibleProvider:
             f"[{source.key}] {source.title}\n{source.content}\nPlatform URL: {source.url}"
             for source in request.sources
         )
-        system_instruction = (
-            "You are the NCCT trainee career counsellor. Answer only from the approved "
-            "sources below. Never create a job, scheme, programme, eligibility rule, deadline, "
-            "salary, or benefit. If the sources do not answer the question, clearly say the "
-            "information is unavailable. Keep the answer practical and concise. Cite relevant "
-            "sources using their exact bracketed keys, and do not add external links. "
-            f"Reply in {LANGUAGE_NAMES[request.language]}.\n\nAPPROVED SOURCES:\n"
-            f"{source_text or 'No approved sources were retrieved.'}"
-        )
+        if request.intent == "greeting":
+            system_instruction = (
+                "You are the NCCT trainee career counsellor. The user is greeting you. Reply "
+                "warmly in one or two concise sentences and mention that you can help with "
+                "training programmes, jobs, resumes, interviews, learning, certificates, and "
+                "employment. Do not claim that you accessed or changed any platform record, "
+                "and do not cite sources. "
+                f"Reply in {LANGUAGE_NAMES[request.language]}."
+            )
+        else:
+            system_instruction = (
+                "You are the NCCT trainee career counsellor. Answer only from the approved "
+                "sources below. Never create a job, scheme, programme, eligibility rule, "
+                "deadline, salary, or benefit. If the sources do not answer the question, "
+                "clearly say the information is unavailable. Keep the answer practical and "
+                "concise. Cite relevant sources using their exact bracketed keys, and do not "
+                f"add external links. Reply in {LANGUAGE_NAMES[request.language]}.\n\n"
+                f"APPROVED SOURCES:\n{source_text or 'No approved sources were retrieved.'}"
+            )
         contents = [
             {
                 "role": "model" if item.role == "assistant" else "user",

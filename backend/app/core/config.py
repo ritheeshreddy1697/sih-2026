@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     career_ai_provider: Literal["auto", "local", "gemini"] = "auto"
     gemini_api_key: str | None = None
     gemini_api_key_file: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
     career_ai_timeout_seconds: float = Field(default=15.0, gt=0, le=120)
     career_chat_rate_limit_per_minute: int = Field(default=12, ge=1, le=100)
