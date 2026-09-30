@@ -377,7 +377,21 @@ def test_application_workflow_and_contact_consent(client: TestClient, db_session
 
     workspace = client.get("/api/v1/employment/employer/workspace", headers=employer_headers)
     assert workspace.status_code == 200
-    assert workspace.json()["applications"][0]["contact"] is None
+    employer_application = workspace.json()["applications"][0]
+    assert employer_application["job_id"] == job["id"]
+    assert employer_application["trainee_id"] == str(scenario["trainee"].id)
+    assert employer_application["trainee_name"] == scenario["trainee"].profile.full_name
+    assert employer_application["cover_note"] == (
+        "I would like to support cooperative member services."
+    )
+    assert employer_application["contact"] is None
+
+    other_workspace = client.get(
+        "/api/v1/employment/employer/workspace",
+        headers=login(client, scenario["other_employer"]),
+    )
+    assert other_workspace.status_code == 200
+    assert other_workspace.json()["applications"] == []
 
     scenario["trainee_profile"].data_sharing_consent = True
     db_session.commit()

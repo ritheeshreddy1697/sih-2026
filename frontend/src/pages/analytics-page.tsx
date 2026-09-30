@@ -529,6 +529,7 @@ export function AnalyticsPage() {
   };
 
   if (!user) return null;
+  const isInstituteAdmin = user.roles.some((role) => role.code === "institute_admin");
 
   return (
     <AppShell user={user} onLogout={logout}>
@@ -563,27 +564,36 @@ export function AnalyticsPage() {
               <h2 className="text-base font-semibold">Filters</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              <label className="text-sm font-medium">
-                Institution
-                <select
-                  className={fieldClass}
-                  value={draftFilters.institution_id ?? ""}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      institution_id: event.target.value || undefined,
-                      programme_id: undefined,
-                    }))
-                  }
-                >
-                  <option value="">All in my scope</option>
-                  {options.institutions.map((institution) => (
-                    <option key={institution.id} value={institution.id}>
-                      {institution.name}{institution.is_demo ? " (Demo)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {isInstituteAdmin ? (
+                <div className="text-sm font-medium">
+                  <span>Institution</span>
+                  <p aria-label="Analytics institution" className={`${fieldClass} flex items-center bg-muted`}>
+                    {user.institution?.name ?? "No institution assigned"}
+                  </p>
+                </div>
+              ) : (
+                <label className="text-sm font-medium">
+                  Institution
+                  <select
+                    className={fieldClass}
+                    value={draftFilters.institution_id ?? ""}
+                    onChange={(event) =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        institution_id: event.target.value || undefined,
+                        programme_id: undefined,
+                      }))
+                    }
+                  >
+                    <option value="">All in my scope</option>
+                    {options.institutions.map((institution) => (
+                      <option key={institution.id} value={institution.id}>
+                        {institution.name}{institution.is_demo ? " (Demo)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="text-sm font-medium" htmlFor="analytics-programme-filter">
                 Programme
                 <select
@@ -754,8 +764,8 @@ export function AnalyticsPage() {
             </div>
 
             <PerformanceSection
-              title="Institution-wise performance"
-              description="Compares institutions in the signed-in administrator's authorized hierarchy."
+              title={isInstituteAdmin ? "Institute performance" : "Institution-wise performance"}
+              description={isInstituteAdmin ? "Shows outcomes only for your assigned institution." : "Compares institutions in the signed-in administrator's authorized hierarchy."}
               rows={dashboard.institution_performance}
               view="institution"
               onExport={(view) => void exportCsv(view)}

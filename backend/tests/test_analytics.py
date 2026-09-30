@@ -84,6 +84,15 @@ def build_analytics_scenario(db: Session) -> dict[str, Any]:
     )
     db.add_all([institute, other_institute, employer_institution])
     db.commit()
+    child_institute = Institution(
+        name="Child Analytics Training Centre",
+        code="ICM-ANALYTICS-CHILD",
+        institution_type=InstitutionType.TRAINING_INSTITUTE,
+        parent_id=institute.id,
+        state="Telangana",
+    )
+    db.add(child_institute)
+    db.commit()
 
     admin = create_test_user(
         db,
@@ -160,6 +169,26 @@ def build_analytics_scenario(db: Session) -> dict[str, Any]:
         code="ANALYTICS-OUTSIDE-2026",
         summary="Outside scope.",
         description="This programme must not appear in institute analytics.",
+        mode=ProgrammeMode.ONLINE,
+        status=ProgrammeStatus.PUBLISHED,
+        eligibility_criteria="Demonstration only.",
+        eligible_applicant_types=[EligibilityType.INDIVIDUAL.value],
+        capacity=20,
+        language="English",
+        duration_days=1,
+        application_deadline=now + timedelta(days=1),
+        start_date=date(2026, 9, 1),
+        end_date=date(2026, 9, 1),
+        published_at=now,
+    )
+    child_programme = Programme(
+        institution_id=child_institute.id,
+        created_by_id=admin.id,
+        updated_by_id=admin.id,
+        title="Child Institute Analytics Programme",
+        code="ANALYTICS-CHILD-2026",
+        summary="Child institution data that must remain outside the administrator's analytics.",
+        description="Verifies that institute analytics do not include descendant institutions.",
         mode=ProgrammeMode.ONLINE,
         status=ProgrammeStatus.PUBLISHED,
         eligibility_criteria="Demonstration only.",
@@ -258,6 +287,7 @@ def build_analytics_scenario(db: Session) -> dict[str, Any]:
         [
             programme,
             outside_programme,
+            child_programme,
             *applications,
             *enrollments,
             course,
@@ -373,7 +403,9 @@ def build_analytics_scenario(db: Session) -> dict[str, Any]:
     return {
         "admin": admin,
         "trainee": trainee_one,
+        "institute": institute,
         "programme": programme,
+        "child_programme": child_programme,
         "outside_programme": outside_programme,
     }
 
@@ -407,7 +439,9 @@ def test_analytics_metrics_are_calculated_from_persisted_records(
         "placements": 1,
     }
     assert body["contains_demo_data"] is True
+    assert body["scope_label"] == "Analytics Demonstration ICM"
     assert len(body["programme_performance"]) == 1
+    assert body["programme_performance"][0]["id"] == str(scenario["programme"].id)
     assert {row["state"] for row in body["geographic_distribution"]} == {
         "Telangana",
         "Andhra Pradesh",
@@ -419,6 +453,15 @@ def test_analytics_filters_scope_drilldown_export_and_permission(
 ) -> None:
     scenario = build_analytics_scenario(db_session)
     headers = login(client, scenario["admin"])
+
+    options = client.get("/api/v1/analytics/options", headers=headers)
+    assert options.status_code == 200
+    assert [item["id"] for item in options.json()["institutions"]] == [
+        str(scenario["institute"].id)
+    ]
+    assert [item["id"] for item in options.json()["programmes"]] == [
+        str(scenario["programme"].id)
+    ]
 
     filtered = client.get(
         "/api/v1/analytics/dashboard?state=Telangana&gender=Woman",
@@ -448,6 +491,13 @@ def test_analytics_filters_scope_drilldown_export_and_permission(
         params={"institution_id": str(scenario["outside_programme"].institution_id)},
     )
     assert outside.status_code == 403
+
+    child = client.get(
+        "/api/v1/analytics/dashboard",
+        headers=headers,
+        params={"institution_id": str(scenario["child_programme"].institution_id)},
+    )
+    assert child.status_code == 403
 
     denied = client.get(
         "/api/v1/analytics/dashboard",

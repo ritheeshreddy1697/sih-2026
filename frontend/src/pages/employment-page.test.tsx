@@ -132,14 +132,25 @@ const employerWorkspace: EmployerWorkspace = {
       trainee_id: trainee.id,
       trainee_name: "Asha Employment Demonstration",
       status: "applied",
-      cover_note: null,
+      cover_note: "I can apply my certified digital member-services training to this role.",
       applied_at: "2026-09-28T10:00:00Z",
       status_updated_at: "2026-09-28T10:00:00Z",
       interview_at: null,
       interview_mode: null,
       interview_details: null,
       employer_notes: null,
-      certificates: [],
+      certificates: [
+        {
+          id: "certificate-1",
+          certificate_number: "NCCT-DEMO-001",
+          title: "Certificate in Digital Cooperative Services",
+          programme_title: "Digital Services for Cooperatives",
+          programme_code: "DIGI-DEMO",
+          issued_at: "2026-09-20T10:00:00Z",
+          expires_at: null,
+          verification_url: "/certificates/verify/demo-token",
+        },
+      ],
       contact: null,
     },
   ],
@@ -199,8 +210,12 @@ describe("employment exchange", () => {
 
     expect(await screen.findByRole("heading", { name: "Recruitment workspace" })).toBeInTheDocument();
     expect(screen.getByText("Digital Services Coordinator")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Applications" }));
+    fireEvent.click(screen.getByRole("button", { name: "View applicants (1)" }));
+    expect(screen.getByRole("heading", { name: "Trainees who applied" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Filter applicants by job posting" })).toHaveValue(job.id);
     expect(screen.getByText("Asha Employment Demonstration")).toBeInTheDocument();
+    expect(screen.getByText(/certified digital member-services training/)).toBeInTheDocument();
+    expect(screen.getByText("Certificate in Digital Cooperative Services")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /Update status/ })).toBeInTheDocument();
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining("/employment/employer/workspace"), expect.anything()));
   });

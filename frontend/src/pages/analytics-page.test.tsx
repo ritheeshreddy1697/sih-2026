@@ -66,7 +66,7 @@ const definitions = {
 
 const dashboard: AnalyticsDashboard = {
   generated_at: "2026-09-28T09:00:00Z",
-  scope_label: "Demonstration ICM and its institutions",
+  scope_label: "Demonstration ICM",
   contains_demo_data: true,
   filters: {
     institution_id: null,
@@ -192,8 +192,10 @@ describe("analytics dashboard", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Training analytics" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Analytics institution")).toHaveTextContent("Demonstration ICM");
+    expect(screen.queryByRole("option", { name: "All in my scope" })).not.toBeInTheDocument();
     expect(await screen.findByText(/Seeded demonstration data is included/)).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /Institution-wise performance comparison/i })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /Institute performance comparison/i })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /Enrolments by participant home state/i })).toBeInTheDocument();
 
     const registrations = screen.getByRole("button", { name: /Registrations 12/i });

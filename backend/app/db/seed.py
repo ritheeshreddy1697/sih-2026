@@ -50,6 +50,9 @@ from app.models import (
     HostelRoom,
     Institution,
     InstitutionType,
+    JobApplication,
+    JobApplicationCertificate,
+    JobApplicationStatus,
     JobPosting,
     JobProgrammeRequirement,
     JobStatus,
@@ -1303,6 +1306,40 @@ def seed_development_data(db: Session) -> None:
             programme_requirements=[JobProgrammeRequirement(programme_id=completed_programme.id)],
         )
         db.add(demonstration_job)
+        db.flush()
+
+    demonstration_application = db.scalar(
+        select(JobApplication).where(
+            JobApplication.job_id == demonstration_job.id,
+            JobApplication.trainee_id == trainee.id,
+        )
+    )
+    if demonstration_application is None:
+        demonstration_application = JobApplication(
+            job_id=demonstration_job.id,
+            trainee_id=trainee.id,
+            cover_note=(
+                "I would like to apply my cooperative member-services training in this "
+                "demonstration role."
+            ),
+            status=JobApplicationStatus.APPLIED,
+            applied_at=verified_at,
+            status_updated_at=verified_at,
+        )
+        db.add(demonstration_application)
+        db.flush()
+    if not db.scalar(
+        select(JobApplicationCertificate.application_id).where(
+            JobApplicationCertificate.application_id == demonstration_application.id,
+            JobApplicationCertificate.certificate_id == digital_certificate.id,
+        )
+    ):
+        db.add(
+            JobApplicationCertificate(
+                application_id=demonstration_application.id,
+                certificate_id=digital_certificate.id,
+            )
+        )
 
     for consent_type, granted in (
         ("placement_visibility_consent", True),

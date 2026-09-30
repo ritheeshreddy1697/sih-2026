@@ -41,6 +41,7 @@ from app.models import (
     ProgrammeApplication,
     ProgrammeEnrollment,
     ProgrammeNomination,
+    RoleCode,
     TraineeProfile,
     User,
 )
@@ -202,13 +203,22 @@ def _matches_participant(participant: Participant, filters: AnalyticsFilters) ->
     return True
 
 
+def _analytics_institution_ids(db: Session, user: User) -> set[UUID] | None:
+    role_codes = {role.code for role in user.roles}
+    if has_permission(role_codes, Permission.PLATFORM_MANAGE):
+        return None
+    if RoleCode.INSTITUTE_ADMIN in role_codes:
+        return {user.institution_id} if user.institution_id else set()
+    return scoped_institution_ids(db, user)
+
+
 def _programme_query(db: Session, user: User, filters: AnalyticsFilters) -> list[Programme]:
     if filters.start_date and filters.end_date and filters.start_date > filters.end_date:
         raise HTTPException(status_code=422, detail="Start date must be on or before end date")
     if filters.participant_category and filters.participant_category not in PARTICIPANT_CATEGORIES:
         raise HTTPException(status_code=422, detail="Unsupported participant category")
 
-    allowed = scoped_institution_ids(db, user)
+    allowed = _analytics_institution_ids(db, user)
     if filters.institution_id and allowed is not None and filters.institution_id not in allowed:
         raise HTTPException(status_code=403, detail="Institution is outside your analytics scope")
 
@@ -635,7 +645,7 @@ def _geography(dataset: AnalyticsDataset, programme_ids: set[UUID]) -> list[Anal
 
 
 def filter_options(db: Session, user: User) -> AnalyticsFilterOptions:
-    allowed = scoped_institution_ids(db, user)
+    allowed = _analytics_institution_ids(db, user)
     institution_statement = select(Institution).where(Institution.is_active.is_(True))
     programme_statement = select(Programme).options(joinedload(Programme.institution))
     if allowed is not None:
@@ -740,7 +750,7 @@ def dashboard(db: Session, user: User, filters: AnalyticsFilters) -> AnalyticsDa
     elif is_platform:
         scope_label = "NCCT network"
     elif user.institution:
-        scope_label = f"{user.institution.name} and its institutions"
+        scope_label = user.institution.name
     else:
         scope_label = "No institution assigned"
     contains_demo = (
